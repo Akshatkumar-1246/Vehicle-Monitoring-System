@@ -1,4 +1,4 @@
-# Automatic Number Plate Recognition (ANPR) System
+# Vehicle Monitoring System
 
 An AI-based vehicle monitoring system that detects number plates, extracts license numbers, tracks vehicle movement, and automatically maintains entry and exit records.
 
