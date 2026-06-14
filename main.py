@@ -10,16 +10,14 @@ import re
 import tempfile
 import time
 
-# ================= PAGE CONFIG =================
 
 st.set_page_config(layout="wide")
-st.title("🚗 Smart Garage Vehicle Entry/Exit System")
+st.title("Smart Vehicle Monitering System")
 
-# ================= TESSERACT =================
 
 pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
-# ================= OCR =================
+# OCR function 
 
 def plate_text(img):
     grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -37,9 +35,9 @@ def clean_plate(text):
     text = re.sub(r'[^A-Z0-9]', '', text)
     return text
 
-# ================= FILE UPLOAD =================
+#upload files
 
-video_file = st.file_uploader("Upload Video", type=["mp4","avi","mov"])
+video_file = st.file_uploader("Upload your Video", type=["mp4","avi","mov"])
 
 if video_file:
 
@@ -63,9 +61,8 @@ if video_file:
     table_placeholder = col2.empty()
     count_placeholder = col2.empty()
 
-    search_query = col2.text_input("🔍 Search Plate")
+    search_query = col2.text_input("Search Number Plate")
 
-    # ================= VIDEO LOOP =================
 
     while cap.isOpened():
 
@@ -75,7 +72,6 @@ if video_file:
 
         frame_count += 1
 
-        # 🔥 Process every 3rd frame (Smooth)
         if frame_count % 3 != 0:
             continue
 
@@ -109,15 +105,13 @@ if video_file:
                 cv2.putText(frame,plate_id,(x1,y1-10),
                             cv2.FONT_HERSHEY_SIMPLEX,0.6,(0,255,0),2)
 
-        # ================= AUTO OUT =================
         remove_list = []
 
         for plate_id, entry_time in active_vehicles.items():
 
             duration = (datetime.now() - entry_time).seconds
 
-            if duration > 5:   # 5 seconds stay demo
-
+            if duration > 5:  
                 now = datetime.now()
                 date = now.strftime("%Y-%m-%d")
                 time_now = now.strftime("%H:%M:%S")
@@ -136,23 +130,21 @@ if video_file:
         for plate_id in remove_list:
             del active_vehicles[plate_id]
 
-        # ================= DISPLAY VIDEO =================
-
+        # dislay 
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         video_placeholder.image(frame_rgb, channels="RGB")
 
-        # ================= DATAFRAME =================
 
         df = pd.DataFrame(
             logs,
             columns=["Car Number","Status","Date","Time","Duration"]
         )
 
-        # 🔍 SEARCH FILTER
+        # SEARCHING FILTER
         if search_query:
             df = df[df["Car Number"].str.contains(search_query.upper())]
 
-        # 🎨 COLOR FORMAT
+        # COLOR FORMAT
         def color_status(val):
             if val == "IN":
                 return "background-color: #28a745; color:white"
@@ -166,27 +158,26 @@ if video_file:
 
         table_placeholder.dataframe(styled_df, height=400)
 
-        # ================= COUNTS =================
 
         count_placeholder.markdown(f"""
-        ### 📊 Live Counts
-        🟢 **IN Count:** {in_count}  
-        🔴 **OUT Count:** {out_count}  
-        🚗 **Inside:** {in_count - out_count}
+        ### Live Counts
+         **IN Count:** {in_count}  
+         **OUT Count:** {out_count}  
+         **Inside:** {in_count - out_count}
         """)
 
         time.sleep(0.03)  # smooth UI
 
     cap.release()
 
-    # ================= DOWNLOAD BUTTON =================
+    # Download Option 
 
     excel_path = "garage_logs.xlsx"
     df.to_excel(excel_path,index=False)
 
     with open(excel_path,"rb") as file:
         st.download_button(
-            label="📥 Download Excel",
+            label="Download Report",
             data=file,
             file_name="garage_logs.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
